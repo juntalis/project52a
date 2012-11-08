@@ -1,0 +1,6 @@
+bin
+ipch
+obj
+*.aps
+*.sdf
+*.suo
