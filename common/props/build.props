@@ -1,0 +1,80 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+	<!-- Common Configuration -->
+	<ItemDefinitionGroup>
+		<ClCompile>
+			<WarningLevel>Level3</WarningLevel>
+			<PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
+			<PreprocessorDefinitions>_WIN32;WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+			<AdditionalIncludeDirectories>$(ProjectDir)res;$(ProjectDir)include;$(ProjectDir)src;$(CommonSrc);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+			<WholeProgramOptimization>$(IsRelease)</WholeProgramOptimization>
+			<FunctionLevelLinking>$(IsRelease)</FunctionLevelLinking>
+			<IntrinsicFunctions>$(IsRelease)</IntrinsicFunctions>
+			<MinimalRebuild>$(IsDebug)</MinimalRebuild>
+			<StringPooling>$(IsRelease)</StringPooling>
+			<OmitFramePointers>$(IsRelease)</OmitFramePointers>
+			<BufferSecurityCheck>$(IsDebug)</BufferSecurityCheck>
+			<EnableFiberSafeOptimizations>$(IsRelease)</EnableFiberSafeOptimizations>
+		</ClCompile>
+		<Link>
+			<EnableCOMDATFolding>$(IsRelease)</EnableCOMDATFolding>
+			<OptimizeReferences>$(IsRelease)</OptimizeReferences>
+			<LargeAddressAware>true</LargeAddressAware>
+		</Link>
+		<ResourceCompile>
+			<AdditionalIncludeDirectories>$(ProjectDir)res;$(ProjectDir)include;$(ProjectDir)src;$(CommonSrc);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+			<PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+			<Culture>0x0409</Culture>
+		</ResourceCompile>
+		<Lib>
+			<LinkTimeCodeGeneration>$(IsRelease)</LinkTimeCodeGeneration>
+		</Lib>
+	</ItemDefinitionGroup>
+	
+	<!-- Debug Configuration -->
+	<ItemDefinitionGroup Condition="'$(BuildConf)'=='debug'">
+		<ClCompile>
+			<Optimization>Disabled</Optimization>
+			<PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+			<RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+		</ClCompile>
+		<Link>
+			<GenerateDebugInformation>true</GenerateDebugInformation>
+			<ProgramDatabaseFile>$(OutDir)$(TargetName)$(TargetExt).pdb</ProgramDatabaseFile>
+		</Link>
+		<ResourceCompile>
+			<PreprocessorDefinitions>DEBUG;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+		</ResourceCompile>
+	</ItemDefinitionGroup>
+	
+	<!-- Release Configuration -->
+	<ItemDefinitionGroup Condition="'$(BuildConf)'=='release'">
+		<ClCompile>
+			<Optimization>MaxSpeed</Optimization>
+			<PreprocessorDefinitions>_NDEBUG;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+			<RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+			<InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+			<EnableEnhancedInstructionSet Condition="('$(CLRSupport)' != 'true') And ('$(PlatformTarget)'=='x86')">StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+			<EnableEnhancedInstructionSet Condition="('$(CLRSupport)' != 'true') And ('$(PlatformTarget)'=='x64')">AdvancedVectorExtensions</EnableEnhancedInstructionSet>
+			<AdditionalOptions Condition="'$(PlatformTarget)'=='x86'">/Qfast_transcendentals $(AdditionalOptions)</AdditionalOptions>
+			<AdditionalOptions Condition="'$(PlatformTarget)'=='x64'">/Qfast_transcendentals /favor:AMD64 $(AdditionalOptions)</AdditionalOptions>
+		</ClCompile>
+		<Link>
+			<LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+		</Link>
+		<ResourceCompile>
+			<PreprocessorDefinitions>_NDEBUG;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+		</ResourceCompile>
+	</ItemDefinitionGroup>
+	
+	<!-- x64 Configuration -->
+	<ItemDefinitionGroup Condition="'$(PlatformTarget)'=='x64'">
+		<Link>
+			<TargetMachine>MachineX64</TargetMachine>
+		</Link>
+		<ResourceCompile>
+			<PreprocessorDefinitions>_WIN64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+		</ResourceCompile>
+	</ItemDefinitionGroup>
+
+</Project>

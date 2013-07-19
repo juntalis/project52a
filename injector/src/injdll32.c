@@ -1,122 +1,131 @@
-/*
-Inject code into the target process to load our DLL.	The target thread
-should be suspended on entry; it remains suspended on exit.
-
-Initially I used the "stack" method of injection.  However, this fails
-when DEP is active, since that doesn't allow code to execute in the stack.
-To overcome this I used the "CreateRemoteThread" method.  However, this
-would fail with Wselect, a program to assist batch files.  Wselect runs,
-but it has no output.  As it turns out, removing the suspended flag would
-make Wselect work, but it caused problems with everything else.  So now I
-allocate a section of memory and change the context to run from there.  At
-first I had an event to signal when the library was loaded, then the memory
-was released.  However, that wouldn't work with -p and CMD.EXE (4NT v8
-worked fine).  Since it's possible the DLL might start a process suspended,
-I've decided to simply keep the memory.
-*/
-
+/**
+ * @file injdll32_64.c
+ * @brief thegod
+ */
 #include "precompiled.h"
+#include "util.h"
 #include "injector.h"
-#include "dllexports.h"
 
-#ifdef _MSC_VER
-#	pragma comment(lib, "advapi32.lib")
+#ifdef BUILD_ARCH_X64
+#	ifndef WOW64_CONTEXT_ALL
+#		include "wow64.h"
+		TWow64GetThreadContext Wow64GetThreadContext;
+		TWow64SetThreadContext Wow64SetThreadContext;
+#		define IMPORT_WOW64
+#	endif
+#	define CONTEXT WOW64_CONTEXT
+#	undef CONTEXT_CONTROL
+#	define CONTEXT_CONTROL  WOW64_CONTEXT_CONTROL
+#	define GetThreadContext Wow64GetThreadContext
+#	define SetThreadContext Wow64SetThreadContext
 #endif
 
-#ifdef _WIN64
-#if defined(__MINGW64__) || (defined(_MSC_VER) && _MSC_VER <= 1400)
-#include "wow64.h"
-
-TWow64GetThreadContext Wow64GetThreadContext;
-TWow64SetThreadContext Wow64SetThreadContext;
-#endif
-
-#define CONTEXT 	 WOW64_CONTEXT
-#undef	CONTEXT_CONTROL
-#define CONTEXT_CONTROL  WOW64_CONTEXT_CONTROL
-#define GetThreadContext Wow64GetThreadContext
-#define SetThreadContext Wow64SetThreadContext
-#endif
-
-
-DWORD LLW;
-const char* sLoadLibraryW = "LoadLibraryW";
-
-void InjectDLL32( LPPROCESS_INFORMATION ppi, LPCTSTR dll )
+#ifdef IMPORT_WOW64
+#	define GETPROC(proc) proc = (T##proc)GetProcAddress(hKernel, #proc)
+static inline void import_wow64_context_procs(void)
 {
+	if (Wow64GetThreadContext == 0) {
+		HMODULE hKernel = GetModuleHandleW(L"kernel32.dll");
+		GETPROC(Wow64GetThreadContext);
+		GETPROC(Wow64SetThreadContext);
+		// Assume if one is defined, so is the other.
+		if(Wow64GetThreadContext == 0) {
+			fatal(1, L"Failed to get pointer to Wow64GetThreadContext.");
+			return;
+		}
+	}
+}
+#	undef GETPROC
+#else
+#	define import_wow64_context_procs() 
+#endif
+
+#define CODESIZE 68
+void inject_x86(LPPROCESS_INFORMATION ppi, wchar_t* sDllPath, size_t szDllPath)
+{
+	LPVOID mem;
 	CONTEXT context;
-	DWORD   len;
-	LPVOID  mem;
-	DWORD   mem32;
-#define CODESIZE 20
-	BYTE	  code[CODESIZE+TSIZE(MAX_PATH)];
-	union
-	{
+	DWORD dwCodeSize, offLoadLibraryW, offInitFunc, mem32;
+	BYTE code[CODESIZE + WSIZE(MAX_PATH+1)] = {0};
+	union {
 		PBYTE  pB;
+		PWORD  pW;
 		PDWORD pL;
 	} ip;
 
-	len = TSIZE(lstrlen( dll ) + 1);
-	if (len > TSIZE(MAX_PATH))
-		return;
-
-	if (LLW == 0)
-	{
-		HMODULE hKernel = GetModuleHandleA( "kernel32.dll" );
-#ifdef _WIN64
-#ifdef __MINGW64__
-#define GETPROC( proc ) proc = (T##proc)GetProcAddress( hKernel, #proc )
-		GETPROC( Wow64GetThreadContext );
-		GETPROC( Wow64SetThreadContext );
-		// Assume if one is defined, so is the other.
-		if (Wow64GetThreadContext == 0)
-		{
-			DEBUGSTR( 1, L"Failed to get pointer to Wow64GetThreadContext.\n" );
-			return;
-		}
-#endif
-		static PDllExport x86_exports = NULL;
-		if(x86_exports == NULL) {
-			if(!dump_exports(&x86_exports, _T("kernel32"), FALSE)) {
-				DEBUGSTR( 1, L"Failed to enumerate kernel32 exports.\n" );
-				return;
-			}
-		}
-		LLW = find_export(x86_exports, sLoadLibraryW);
-		if(LLW == -1) {
-			DEBUGSTR( 1, L"Failed to get pointer to LoadLibraryW.\n" );
-			return;
-		}
-#else
-		LLW = (DWORD)GetProcAddress( hKernel, sLoadLibraryW )
-#endif
-	}
-
-	CopyMemory( code + CODESIZE, dll, len );
-	len += CODESIZE;
-
-	context.ContextFlags = CONTEXT_CONTROL;
-	GetThreadContext( ppi->hThread, &context );
-	mem = VirtualAllocEx( ppi->hProcess, NULL, len, MEM_COMMIT,
-		PAGE_EXECUTE_READWRITE );
-	mem32 = (DWORD)(DWORD_PTR)mem;
+	import_wow64_context_procs();
+	dwCodeSize = CODESIZE + WSIZE(szDllPath + 1);
+	offLoadLibraryW = find_export_x86(L"kernel32.dll", "LoadLibraryW");
+	offInitFunc = find_export_x86(sDllPath, "Init");
+	
+	context.ContextFlags = WOW64_CONTEXT_CONTROL;
+	GetThreadContext(ppi->hThread, &context);
+	
+	mem = VirtualAllocEx( ppi->hProcess, NULL, dwCodeSize, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+	mem32 = ptr_to_dw(mem);
 
 	ip.pB = code;
 
-	*ip.pB++ = 0x68;			// push  eip
-	*ip.pL++ = context.Eip;
+	/** <label>entry</label> */
+	*ip.pB++ = 0x8b;			// mov eax, [esp]
+	*ip.pW++ = 0x2404;
+	*ip.pB++ = 0xc3;			// ret
+
+	/** <label>main</label> */
+	*ip.pB++ = 0x68;			// push eip
+	*ip.pL++ = context.Eip;		//   store the original context
 	*ip.pB++ = 0x9c;			// pushf
 	*ip.pB++ = 0x60;			// pusha
-	*ip.pB++ = 0x68;			// push  L"path\to\ANSI32.dll"
-	*ip.pL++ = mem32 + CODESIZE;
-	*ip.pB++ = 0xe8;			// call  LoadLibraryW
-	*ip.pL++ = LLW - (mem32 + (DWORD)(ip.pB+4 - code));
+	*ip.pB++ = 0xe8;			// call entry
+	*ip.pL++ = 0xfffffff0L;
+	*ip.pB++ = 0x83;			// add eax, wsDllPath - $
+	*ip.pW++ = 0x34c0;
+	*ip.pB++ = 0x50;			// push eax
+	//   stack = [ dllpath, original context ]
+	*ip.pB++ = 0x31;			// xor ecx,ecx (ECX = 0)
+	*ip.pB++ = 0xc9;			//   ecx = 0
+	*ip.pB++ = 0x64;			// mov esi, [ fs:ecx + 0x30 ]
+	*ip.pB++ = 0x8b;			//   ecx = &PEB ([fs:0x30])
+	*ip.pB++ = 0x71;
+	*ip.pB++ = 0x30;
+	*ip.pB++ = 0x8b;			// mov esi, [ esi + 0x0C ]
+	*ip.pW++ = 0xc76;			//   esi = PEB->Ldr
+	*ip.pB++ = 0x8b;			// mov esi, [ esi + 0x1C ]
+	*ip.pW++ = 0x1c76;			//   esi = PEB->Ldr.InInitOrder (first module)
+
+	/** <label>nextmod</label> */
+	*ip.pB++ = 0x8b;			// mov ebp, [ esi + 0x08 ]
+	*ip.pW++ = 0x86e;			//   ebp = InInitOrder[X].base_address
+	*ip.pB++ = 0x8b;			// mov edi, [ esi + 0x20 ]
+	*ip.pW++ = 0x207e;			//   edi = InInitOrder[X].module_name (unicode string)
+	*ip.pB++ = 0x8b;			// mov esi, [ esi]
+	*ip.pB++ = 0x36;			//   esi = InInitOrder[X].flink (next module)
+	*ip.pB++ = 0x38;			// cmp [ edi + 12*SZWCHAR ], cl
+	*ip.pW++ = 0x184f;			//   modulename[12] == 0 ? strlen("kernel32.dll") == 12
+	*ip.pB++ = 0x75;			// jne nextmod
+	*ip.pB++ = 0xf3;			//   continue until we find kernel32
+
+	*ip.pB++ = 0x89;			// mov edi, ebp
+	*ip.pB++ = 0xef;			//   edi = kernel32.base_address
+	*ip.pB++ = 0x81;			// add edi, LoadLibraryW offset
+	*ip.pB++ = 0xc7;			//   edi = kernel32.LoadLibraryW
+	*ip.pL++ = offLoadLibraryW;
+	*ip.pB++ = 0xff;			// call edi
+	*ip.pB++ = 0xd7;			//   stack = [ dllpath, ebp, caller ]
+	*ip.pB++ = 0x89;			// mov edi, eax
+	*ip.pB++ = 0xc7;			//   edi = dll.base
+	*ip.pB++ = 0x81;			// add edi, dll.init_func offset
+	*ip.pB++ = 0xc7;			//   edi = dll.init_func
+	*ip.pL++ = offInitFunc;
+	*ip.pB++ = 0xff;			// call DWORD edi
+	*ip.pB++ = 0xd7;			//   call dll.init_func()
 	*ip.pB++ = 0x61;			// popa
 	*ip.pB++ = 0x9d;			// popf
 	*ip.pB++ = 0xc3;			// ret
-
-	WriteProcessMemory( ppi->hProcess, mem, code, len, NULL );
-	FlushInstructionCache( ppi->hProcess, mem, len );
-	context.Eip = mem32;
+	
+	CopyMemory((void*)ip.pB, sDllPath, WSIZE(szDllPath+1));
+	WriteProcessMemory(ppi->hProcess, mem, code, dwCodeSize, NULL);
+	FlushInstructionCache(ppi->hProcess, mem, dwCodeSize);
+	context.Eip = mem32 + 4;
 	SetThreadContext( ppi->hThread, &context );
 }

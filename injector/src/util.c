@@ -1,283 +1,236 @@
-/*
-util.c - Utility functions.
-*/
-
 #include "precompiled.h"
+#include "util.h"
 
-TCHAR	prog_path[MAX_PATH];
-LPTSTR	prog;
-int	log_level = 3 + 4 + 8 + 16;
-char	tempfile[MAX_PATH];
-DWORD	pid;
+#define FILE_SHARE_ALL (FILE_SHARE_READ|FILE_SHARE_WRITE|FILE_SHARE_DELETE)
 
+typedef struct _log_level_prefix {
+	wchar_t prefix[8];
+	cp_color_t color;
+} log_level_prefix_t;
 
-LPCTSTR get_filename_ext(LPCTSTR filename) {
-	LPCTSTR dot = _tcsrchr(filename, _T('.'));
-	if(!dot || dot == filename) return EMPTY_TSTR;
-	return dot + 1;
+static log_level_prefix_t log_level_prefixes[] = {
+	{ L"ERROR", cp_red },
+	{ L"WARN", cp_yellow },
+	{ L"INFO", cp_white },
+	{ L"DEBUG", cp_dark_green },
+	{ L"VERBOSE", cp_cyan },
+};
+
+void error_message(DWORD dw, wchar_t* message, ...)
+{
+	void *lpDisplayBuf = NULL, *lpMsgBuf = NULL;
+
+	if(dw == 0) {
+		// If no return code was specified, we assume that the message
+		// contains a function name that failed. In that case, we retrieve
+		// the system error message for the last-error code
+		size_t szDisplayLen;
+		dw = GetLastError();
+
+		FormatMessageW(
+			FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |FORMAT_MESSAGE_IGNORE_INSERTS,
+			NULL, dw, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (wchar_t*)&lpMsgBuf, 0, NULL
+		);
+
+		szDisplayLen = wcslen((const wchar_t*)lpMsgBuf) + wcslen((const wchar_t*)message) + 32;
+
+		// Allocate our buffer for the error message.
+		lpDisplayBuf = (void*)LocalAlloc(LPTR, WSIZE(szDisplayLen));
+		_snwprintf((wchar_t*)lpDisplayBuf, szDisplayLen,
+			L"%s failed with error 0x%08X: %s", message, dw, lpMsgBuf
+		);
+	} else {
+		// Otherwise, we assume that the error message is a format string.
+		size_t szDisplayBuf;
+		va_list args = NULL;
+
+		// Allocate buffer for our resulting format string.
+		va_start(args, message);
+
+		// Check the resulting size of the buffer.
+		szDisplayBuf = (size_t)_vscwprintf((const wchar_t*)lpMsgBuf, args) + 1;
+
+		// Allocate our buffer.
+		lpDisplayBuf = (void*)LocalAlloc(LPTR, WSIZE(szDisplayBuf));
+
+		// Finally, fill in the message.
+		_vsnwprintf((wchar_t*)lpDisplayBuf, szDisplayBuf,(const wchar_t*)message, args);
+		va_end(args);
+	}
+	
+	XLOGW(LEVEL_ERROR, (const wchar_t*)lpDisplayBuf);
+	LocalFree(lpMsgBuf);
+	LocalFree(lpDisplayBuf);
 }
 
-// Get just the name of the program: "C:\path\program.exe" -> "program".
-// Returns a pointer within program; it is modified to remove the extension.
-LPTSTR get_program_name( LPTSTR program )
+/** Allocation/Deallocation */
+void *xalloc(size_t size)
 {
-	LPTSTR name, ext;
-
-	if (program == NULL)
-	{
-		GetModuleFileName( NULL, prog_path, lenof(prog_path) );
-		program = prog_path;
+	void *p = malloc(size);
+	if (p == NULL) {
+		fatalfn(L"malloc");
 	}
-	name = wcsrchr( program, '\\' );
-	if (name != NULL)
-	++name;
-	else
-	name = program;
-	ext = wcsrchr( name, '.' );
-	if (ext != NULL && ext != name)
-	*ext = '\0';
-
-	return name;
-}
-
-
-void DEBUGSTR( int level, LPTSTR szFormat, ... )
-{
-	TCHAR szBuffer[1024], szEscape[1024];
-	va_list pArgList;
-	HANDLE mutex;
-	DWORD wait;
-	FILE* file;
-
-	if ((log_level & 3) < level && !(level & 4 & log_level))
-	return;
-
-	if (*tempfile == '\0')
-	{
-		_snprintf( tempfile, MAX_PATH, "%s\\procrewriter.log", getenv( "TEMP" ) );
-		pid = GetCurrentProcessId();
-	}
-	if (szFormat == NULL)
-	{
-		file = fopen( tempfile, "wt" );
-		if (file != NULL)
-		{
-			SYSTEMTIME now;
-			GetLocalTime( &now );
-			fprintf( file, "ProcessRewriter v" PR_VERSA " log (%d) started "
-			"%d-%.2d-%.2d %d:%.2d:%.2d\n",
-			log_level,
-			now.wYear, now.wMonth, now.wDay,
-			now.wHour, now.wMinute, now.wSecond );
-			fclose( file );
-		}
-		return;
-	}
-
-	va_start( pArgList, szFormat );
-	_vsnwprintf( szBuffer, lenof(szBuffer), szFormat, pArgList );
-	va_end( pArgList );
-
-	szFormat = szBuffer;
-	if (*szFormat == '\33')
-	{
-		BOOL first = TRUE;
-		LPTSTR pos = szEscape;
-		while (*++szFormat != '\0' && pos < szEscape + lenof(szEscape) - 4)
-		{
-			if (*szFormat < 32)
-			{
-				*pos++ = '\\';
-				switch (*szFormat)
-				{
-				case '\a': *pos++ = 'a'; break;
-				case '\b': *pos++ = 'b'; break;
-				case '\t': *pos++ = 't'; break;
-				case '\r': *pos++ = 'r'; break;
-				case '\n': *pos++ = 'n'; break;
-					case	27 : *pos++ = 'e'; break;
-				default:
-					pos += _snwprintf( pos, 32, L"%.*o",
-					(szFormat[1] >= '0' && szFormat[1] <= '7') ? 3 : 1,
-					*szFormat );
-				}
-			}
-			else
-			{
-				if (*szFormat == '"')
-				{
-					if (first)
-					first = FALSE;
-					else if (szFormat[1] != '\0')
-					*pos++ = '\\';
-				}
-				*pos++ = *szFormat;
-			}
-		}
-		*pos = '\0';
-		szFormat = szEscape;
-	}
-
-	mutex = CreateMutex( NULL, FALSE, L"procrewriter_debug_file" );
-	wait	= WaitForSingleObject( mutex, 500 );
-	file	= fopen( tempfile, "at" ); // _fmode might be binary
-	if (file != NULL)
-	{
-		fwprintf( file, L"%s (%lu): %s\n", prog, pid, szFormat );
-		fclose( file );
-	}
-	if (wait == WAIT_OBJECT_0)
-	ReleaseMutex( mutex );
-	CloseHandle( mutex );
-}
-
-/**
-* Malloc that causes process exit in case of ENOMEM
-*/
-void *xmalloc(size_t size)
-{
-	void *p = calloc(size, 1);
-	if (p == 0) {
-		DEBUGSTR(1, (LPTSTR)_T("FATAL: Error during xmalloc - Size: %lu\n"), size);
-		_exit(1);
-	}
+	memset(p, 0, size);
 	return p;
 }
 
-void xfree(void *m)
+void _real_xfree_(void *m)
 {
-	if (m != 0)
-		free(m);
+	if (m != NULL) free(m);
 }
 
-static inline size_t get_file_length(FILE* pFile)
+void _real_xafree_(void **array)
 {
-	long lCurrPos, lEndPos;
-	size_t result = -1;
-	lCurrPos = ftell(pFile);
-	if(lCurrPos == -1)
-		return result;
-	if(fseek(pFile, 0L, SEEK_END) == -1)
-		return result;
-	lEndPos = ftell(pFile);
-	if(lEndPos == -1)
-		return result;
-	result = (size_t)(lEndPos - lCurrPos);
-	if(fseek(pFile, 0L, SEEK_SET) == -1)
-		return -1;
-	return result;
-}
-
-BOOL file_to_buffer (LPTSTR sPath, PBYTE* buffer, size_t* size)
-{
-	FILE* fp;
-	fp = _tfopen(sPath, _T("rb"));
-	if (fp == NULL) {
-		DEBUGSTR(1, (LPTSTR)_T("Could not read file: %s\n"), sPath);
-		return FALSE;
-	}
-	*size = get_file_length(fp);
-	if(*size == -1) {
-		DEBUGSTR(1, (LPTSTR)_T("Could not get the size of file: %s!\n"), sPath);
-		return FALSE;
-	}
-	*buffer = (PBYTE)xmalloc(*size);
-	if(!*buffer) {
-		DEBUGSTR(1, (LPTSTR)_T("Could allocate our buffer for the contents of file: %s!\n"), sPath);
-		return FALSE;
-	}
-	ZeroMemory(*buffer, *size);
-	fread(*buffer, 1, *size, fp);
-	fclose(fp);
-	return TRUE;
-}
-
-
-
-/* String Array Stuff */
-
-char **straalloc(size_t size)
-{
-	return (char **)xmalloc((size + 1) * sizeof(char *));
-}
-
-wchar_t **waalloc(size_t size)
-{
-	return (wchar_t **)xmalloc((size + 1) * sizeof(wchar_t *));
-}
-
-void strafree(char **array)
-{
-	char **ptr = array;
-
-	if (array == 0)
-		return;
-	while (*ptr != 0)
+	void **ptr = array;
+	if (array == NULL) return;
+	while (*ptr != NULL)
 		xfree(*(ptr++));
 	xfree(array);
 }
 
-void wafree(wchar_t **array)
-{
-	wchar_t **ptr = array;
-
-	if (array == 0)
-		return;
-	while (*ptr != 0)
-		xfree(*(ptr++));
-	xfree(array);
-}
-
-/* String duplication stuff */
-
-char *xstrdup(const char *s)
-{
-	char *d;
-	if (s == 0)
-		return 0;
-	d = _strdup(s);
-	if (d == 0) {
-		DEBUGSTR(1, (LPTSTR)_T("FATAL: Error during xstrdup\n"));
-		_exit(1);
-	}
-	return d;
-}
-
-wchar_t *xwcsdup(const wchar_t *s)
-{
-	wchar_t *d;
-	if (s == 0)
-		return 0;
-	d = _wcsdup(s);
-	if (d == 0) {
-		_wperror(L"wcsdup");
-		_exit(1);
-	}
-	return d;
-}
-
-char *xstrndup(const char *s, size_t size)
-{
-	char *p;
-
-	if (s == 0)
-		return 0;
-	if (strlen(s) < size)
-		size = strlen(s);
-	p = (char *)xmalloc((size + 2) * sizeof(wchar_t));
-	memcpy(p, s, size * sizeof(char));
-	return p;
-}
-
+/** String Duplication */
 wchar_t *xwcsndup(const wchar_t *s, size_t size)
 {
 	wchar_t *p;
-
-	if (s == 0)
-		return 0;
-	if (wcslen(s) < size)
-		size = wcslen(s);
-	p = (wchar_t *)xmalloc((size + 2) * sizeof(wchar_t));
+	size_t szlen;
+	if (!s || (size < 0)) return NULL;
+	if ((szlen = wcslen(s)) < size)
+		size = szlen;
+	p = salloc(size, wchar_t);
 	memcpy(p, s, size * sizeof(wchar_t));
 	return p;
 }
+
+int file_exists(const wchar_t* sPath)
+{
+	DWORD dwAttrib = GetFileAttributesW(sPath);
+	return (dwAttrib != INVALID_FILE_ATTRIBUTES && 
+		!(dwAttrib & FILE_ATTRIBUTE_DIRECTORY));
+}
+
+void* file_to_buffer(const wchar_t* path, size_t* size)
+{
+	DWORD r;
+	BYTE* buffer = NULL;
+	HANDLE hf;
+	LARGE_INTEGER fsize;
+	*size = 0;
+
+	// open and read file to buffer
+	if((hf = CreateFileW(path, GENERIC_READ, FILE_SHARE_ALL, NULL, OPEN_EXISTING, 0, NULL)) == INVALID_HANDLE_VALUE) {
+		error_function(L"CreateFile");
+	}
+
+	if(!GetFileSizeEx(hf, &fsize)) {
+		CloseHandle(hf);
+		error_function(L"GetFileSizeEx");
+		return buffer;
+	}
+
+	if(!(buffer = (BYTE*)calloc(1, fsize.LowPart + 1))) {
+		CloseHandle(hf);
+		error_function(L"calloc");
+		return buffer;
+	}
+
+	if (!ReadFile(hf, buffer, fsize.LowPart, &r, NULL)) {
+		CloseHandle(hf);
+		free(buffer);
+		error_function(L"ReadFile");
+		buffer = NULL;
+		return buffer;
+	}
+
+	*size = fsize.LowPart;
+	CloseHandle(hf);
+	return buffer;
+}
+
+/** Output formatting/character attributes/etc */
+static HANDLE hStdOut = INVALID_HANDLE_VALUE;
+static WORD wOriginalAttrs = 0;
+
+static void setup_colors(void)
+{
+	CONSOLE_SCREEN_BUFFER_INFO csbiCurrent;
+	if(hStdOut != INVALID_HANDLE_VALUE) return;
+	
+	if((hStdOut = GetStdHandle(STD_OUTPUT_HANDLE)) == INVALID_HANDLE_VALUE) {
+		fatalfn(L"GetStdHandle");
+	}
+	
+	if(!GetConsoleScreenBufferInfo(hStdOut, &csbiCurrent)) {
+		fatalfn(L"GetConsoleScreenBufferInfo");
+	}
+	
+	wOriginalAttrs = csbiCurrent.wAttributes;
+}
+
+int set_color(cp_color_t color)
+{
+	int result = 1;
+	WORD wColor;
+	setup_colors();
+	wColor = (color == cp_default) ?
+		wOriginalAttrs : (WORD)((0 >> 4) | color);
+
+	if(!SetConsoleTextAttribute(hStdOut, wColor)) {
+		error_function(L"SetConsoleTextAttribute");
+		result = 0;
+	}
+	return result;
+}
+
+int puts_color_a(cp_color_t color, char* sfmt, ...)
+{
+	int result = 0;
+	va_list args = NULL;
+	if(!set_color(color)) return -1;
+	va_start(args, sfmt);
+	vprintf(sfmt, args);
+	va_end(args);
+	return result;
+}
+
+int puts_color_w(cp_color_t color, wchar_t* sfmt, ...)
+{
+	int result = 0;
+	va_list args = NULL;
+	if(!set_color(color)) return -1;
+	va_start(args, sfmt);
+	vwprintf(sfmt, args);
+	va_end(args);
+	return result;
+}
+
+/** Format is [HH:MM:SS] LEVEL: */
+#define LOG_PREFIX_FMT L"[%.2d:%.2d:%.2d] %s: "
+
+void generic_log_prefix(log_level_t level)
+{
+	SYSTEMTIME now = {0};
+	log_level_prefix_t* prefix;
+	if(level == LEVEL_NOTSET) return;
+	prefix = &(log_level_prefixes[(int)level]);
+	GetLocalTime(&now);
+	print_color_w(prefix->color, LOG_PREFIX_FMT, now.wHour, now.wMinute, now.wSecond, prefix->prefix);
+}
+
+// I should probably have a size arg here, but fuck it.
+// Paths can exceed MAX_PATH, but for now, we wont support those.
+int init_program_info(program_info_t* pinfo)
+{
+	wchar_t sBuffer[MAX_PATH+1], *sNamePart;
+	if(!pinfo) return 0;
+	if(!GetModuleFileNameW(NULL, pinfo->path, MAX_PATH) || !(*pinfo->path)) {
+		error_function(L"GetModuleFileNameW");
+		return 0;
+	}
+	wcscpy(sBuffer, pinfo->path);
+	sNamePart = wcsrchr(sBuffer, L'\\');
+	pinfo->name = &(pinfo->path[0]) + (sNamePart - sBuffer + 1); // We don't want the ending '\\''
+	*sNamePart = L'\0';
+	wcscpy(pinfo->folder, sBuffer);
+	return (*pinfo->folder != L'\0') && (*pinfo->name != L'\0');
+}
+

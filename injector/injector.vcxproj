@@ -18,43 +18,48 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="src\dllexports.c" />
-    <ClCompile Include="src\injdll32.c" />
-    <ClCompile Include="src\parent.c" />
-    <ClCompile Include="src\proctype.c" />
-    <ClCompile Include="src\util.c" />
-  </ItemGroup>
-  <ItemGroup Condition="'$(Platform)'=='x64'">
-    <ClCompile Include="src\injdll64.c" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="src\dllexports.h" />
-    <ClInclude Include="src\injector.h" />
-    <ClInclude Include="src\util.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="src\injdll64.c" />
-  </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{2E8D1995-7299-405E-9835-C7EBB23CDF66}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>injector</RootNamespace>
+    <ProjectName>injector</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v100</PlatformToolset>
+  </PropertyGroup>
+  <!-- Use Windows 7.1 SDK if we have it. -->
+  <PropertyGroup Label="Configuration" Condition="exists('$(VCTargetsPath10)Platforms\Win32\PlatformToolsets\Windows7.1SDK\Microsoft.Cpp.Win32.Windows7.1SDK.props')">
     <PlatformToolset>Windows7.1SDK</PlatformToolset>
   </PropertyGroup>
+  <!-- Unfortunately, a lot of the stuff below needs to be declared in the actual project file -->
+  <!-- Before we do anything else, we need to normalize our build environment -->
+  <Import Project="$(SolutionDir)common\props\setup.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
-  <ImportGroup Label="ExtensionSettings">
-  </ImportGroup>
+  <ImportGroup Label="ExtensionSettings" />
   <ImportGroup Label="PropertySheets">
-    <Import Project="$(SolutionDir)common\procrewriter.props" Label="ProcessRewriterProperties" />
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
+  <!-- Build-specifics -->
+  <PropertyGroup Label="Configuration">
+    <WholeProgramOptimization>$(IsRelease)</WholeProgramOptimization>
+    <UseDebugLibraries>$(IsDebug)</UseDebugLibraries>
+    <LinkIncremental>$(IsDebug)</LinkIncremental>
+  </PropertyGroup>
+  <!-- Output/Intermediate Folder configuration -->
+  <PropertyGroup>
+    <TargetName>project52a$(TargetSuffix)</TargetName>
+    <OutDir>$(DistDir)</OutDir>
+    <OutputPath>$(DistDir)</OutputPath>
+    <IntDir>$(ObjDir)</IntDir>
+  </PropertyGroup>
+  <!-- And lastly, our build configuration and dependencies. -->
+  <ImportGroup Label="Build Configuration">
+    <Import Project="$(CommonProps)build.props" />
+  </ImportGroup>
+  <!-- At this point, there's very little configuration necessary. -->
   <ItemDefinitionGroup>
     <ClCompile>
       <PreprocessorDefinitions>_CONSOLE;CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -63,6 +68,32 @@
       <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\common\src\precompiled.c" />
+    <ClCompile Include="src\injdll32.c" />
+    <ClCompile Include="src\injector.c" />
+    <ClCompile Include="src\parent.c" />
+    <ClCompile Include="src\util.c" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(PlatformTarget)'=='x86'">
+    <ClCompile Include="src\injdll32_32.c" />
+    <None Include="src\injdll32_64.c" />
+    <None Include="src\injdll64.c" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(PlatformTarget)'=='x64'">
+    <None Include="src\injdll32_32.c" />
+    <ClCompile Include="src\injdll32_64.c" />
+    <ClCompile Include="src\injdll64.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="res\resource.h" />
+    <ClInclude Include="src\injector.h" />
+    <ClInclude Include="src\util.h" />
+    <ClInclude Include="src\wow64.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="res\injector.rc" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

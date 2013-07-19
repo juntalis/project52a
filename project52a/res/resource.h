@@ -3,18 +3,17 @@
 // Used by procrewriter.rc
 
 // Next default values for new objects
+#include <project52a/version.h>
 
-
-#define PR_AUTHOR "Charles Grunwald (Juntalis) <ch@rles.grunwald.me>"
+#define _TEXT(x) x
+#define _T(x) x
 
 #ifdef _WIN64
-#	define PR_DLL "procrewriter.x64.dll"
-#	define PRDLL_NAME "x64 Process Handle Rewriter"
-#	define PRDLL_DESC "Process handle rewriter dll for x64 processes."
+#	define PROJ_DLL_NAME "x64 Process Handle Rewriter"
+#	define PROJ_DLL_DESC "Process handle rewriter dll for x64 processes."
 #else
-#	define PR_DLL "procrewriter.dll"
-#	define PRDLL_NAME "x86 Process Handle Rewriter"
-#	define PRDLL_DESC "Process handle rewriter dll for x86 processes."
+#	define PROJ_DLL_NAME "x86 Process Handle Rewriter"
+#	define PROJ_DLL_DESC "Process handle rewriter dll for x86 processes."
 #endif
 
 #ifdef APSTUDIO_INVOKED

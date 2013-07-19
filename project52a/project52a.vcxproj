@@ -1,0 +1,89 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+	<ItemGroup Label="ProjectConfigurations">
+		<ProjectConfiguration Include="Debug|Win32">
+			<Configuration>Debug</Configuration>
+			<Platform>Win32</Platform>
+		</ProjectConfiguration>
+		<ProjectConfiguration Include="Debug|x64">
+			<Configuration>Debug</Configuration>
+			<Platform>x64</Platform>
+		</ProjectConfiguration>
+		<ProjectConfiguration Include="Release|Win32">
+			<Configuration>Release</Configuration>
+			<Platform>Win32</Platform>
+		</ProjectConfiguration>
+		<ProjectConfiguration Include="Release|x64">
+			<Configuration>Release</Configuration>
+			<Platform>x64</Platform>
+		</ProjectConfiguration>
+	</ItemGroup>
+	<PropertyGroup Label="Globals">
+		<Keyword>Win32Proj</Keyword>
+		<RootNamespace>project52a</RootNamespace>
+		<ProjectName>project52a</ProjectName>
+	</PropertyGroup>
+	<Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+	<PropertyGroup Label="Configuration">
+		<ConfigurationType>DynamicLibrary</ConfigurationType>
+		<CharacterSet>Unicode</CharacterSet>
+		<PlatformToolset>v100</PlatformToolset>
+	</PropertyGroup>
+	<!-- Use Windows 7.1 SDK if we have it. -->
+	<PropertyGroup Label="Configuration" Condition="exists('$(VCTargetsPath10)Platforms\Win32\PlatformToolsets\Windows7.1SDK\Microsoft.Cpp.Win32.Windows7.1SDK.props')">
+		<PlatformToolset>Windows7.1SDK</PlatformToolset>
+	</PropertyGroup>
+	<!-- Unfortunately, a lot of the stuff below needs to be declared in the actual project file -->
+	<!-- Before we do anything else, we need to normalize our build environment -->
+	<Import Project="$(SolutionDir)common\props\setup.props" />
+	<Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+	<ImportGroup Label="ExtensionSettings" />
+	<ImportGroup Label="PropertySheets">
+		<Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+	</ImportGroup>
+	<PropertyGroup Label="UserMacros" />
+	<!-- Build-specifics -->
+	<PropertyGroup Label="Configuration">
+		<WholeProgramOptimization>$(IsRelease)</WholeProgramOptimization>
+		<UseDebugLibraries>$(IsDebug)</UseDebugLibraries>
+		<LinkIncremental>$(IsDebug)</LinkIncremental>
+	</PropertyGroup>
+	<!-- Output/Intermediate Folder configuration -->
+	<PropertyGroup>
+		<TargetName>$(ProjectName)$(TargetSuffix)-$(PlatformBits)</TargetName>
+		<OutDir>$(DistDir)</OutDir>
+		<OutputPath>$(DistDir)</OutputPath>
+		<IntDir>$(ObjDir)</IntDir>
+	</PropertyGroup>
+	<!-- And lastly, our build configuration and dependencies. -->
+	<ImportGroup Label="Build Configuration">
+		<Import Project="$(CommonProps)build.props" />
+	</ImportGroup>
+	<!-- At this point, there's very little configuration necessary. -->
+	<ItemDefinitionGroup>
+		<ClCompile>
+			<PreprocessorDefinitions>_WINDOWS;_USRDLL;PROJECT52A_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+			<!-- <CompileAs>CompileAsC</CompileAs> -->
+		</ClCompile>
+		<Link>
+			<SubSystem>Windows</SubSystem>
+			<ModuleDefinitionFile>$(ProjectDir)project52a.def</ModuleDefinitionFile>
+		</Link>
+	</ItemDefinitionGroup>
+	<ItemGroup>
+		<None Include="project52a.def" />
+	</ItemGroup>
+	<ItemGroup>
+		<ClCompile Include="..\common\src\precompiled.c" />
+		<ClCompile Include="src\project52a.c" />
+	</ItemGroup>
+	<ItemGroup>
+		<ClInclude Include="res\resource.h" />
+	</ItemGroup>
+	<ItemGroup>
+		<ResourceCompile Include="res\project52a.rc" />
+	</ItemGroup>
+	<Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+	<ImportGroup Label="ExtensionTargets">
+	</ImportGroup>
+</Project>

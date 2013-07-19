@@ -1,6 +1,9 @@
-bin
-ipch
-obj
+/bin
+/ipch
+/obj
 *.aps
 *.sdf
+/util
 *.suo
+/ref
+/asm

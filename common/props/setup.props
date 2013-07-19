@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<!-- This property sheet is primarily for setting up a number of macros to make this build less tedious -->
+
+	<!-- First, let's establish our folders, etc -->
+	<PropertyGroup Label="UserMacros">
+		<CommonSrc>$(SolutionDir)common\src</CommonSrc>
+		<CommonProps>$(SolutionDir)common\props\</CommonProps>
+		<ThirdPartyDir>$(SolutionDir)thirdparty\</ThirdPartyDir>
+	</PropertyGroup>
+	
+	<!-- Next, establish the current build configuration -->
+	<PropertyGroup Label="UserMacros" Condition="$(Configuration.ToLower().Contains('release'))">
+		<IsDebug>false</IsDebug>
+		<IsRelease>true</IsRelease>
+		<BuildConf>release</BuildConf>
+		<TargetSuffix></TargetSuffix>
+	</PropertyGroup>
+	
+	<PropertyGroup Label="UserMacros" Condition="$(Configuration.ToLower().Contains('debug'))">
+		<IsDebug>true</IsDebug>
+		<IsRelease>false</IsRelease>
+		<BuildConf>debug</BuildConf>
+		<TargetSuffix>d</TargetSuffix>
+	</PropertyGroup>
+	
+	<!-- And lastly, figure out the architecture we're looking to build for. -->
+	<PropertyGroup Label="UserMacros" Condition="'$(PlatformTarget)'=='' And '$(Platform)'=='Win32'">
+		<PlatformTarget>x86</PlatformTarget>
+		<PlatformBits>32</PlatformBits>
+	</PropertyGroup>
+	<PropertyGroup Label="UserMacros" Condition="'$(PlatformTarget)'=='' And '$(Platform)'=='x86'">
+		<PlatformTarget>x86</PlatformTarget>
+		<PlatformBits>32</PlatformBits>
+	</PropertyGroup>
+	<PropertyGroup Label="UserMacros" Condition="'$(PlatformTarget)'=='' And '$(Platform)'=='x64'">
+		<PlatformTarget>x64</PlatformTarget>
+		<PlatformBits>64</PlatformBits>
+	</PropertyGroup>
+	
+	<!-- One last set of paths, now that we've gotten everything normalized -->
+	<PropertyGroup Label="UserMacros">
+		<ObjDir>$(SolutionDir)obj\$(ProjectName.ToLower())-$(BuildConf)-$(PlatformTarget)\</ObjDir>
+		<DistDir>$(SolutionDir)bin\$(BuildConf)\</DistDir>
+	</PropertyGroup>
+
+	<!-- Pretty sure this is completely unnecessary, but whatever -->
+	<ItemGroup>
+		<BuildMacro Include="CommonSrc">
+			<Value>$(CommonSrc)</Value>
+		</BuildMacro>
+		<BuildMacro Include="CommonProps">
+			<Value>$(CommonProps)</Value>
+		</BuildMacro>
+		<BuildMacro Include="ThirdPartyDir">
+			<Value>$(ThirdPartyDir)</Value>
+		</BuildMacro>
+		<BuildMacro Include="IsDebug">
+			<Value>$(IsDebug)</Value>
+		</BuildMacro>
+		<BuildMacro Include="IsRelease">
+			<Value>$(IsRelease)</Value>
+		</BuildMacro>
+		<BuildMacro Include="BuildConf">
+			<Value>$(BuildConf)</Value>
+		</BuildMacro>
+		<BuildMacro Include="TargetSuffix">
+			<Value>$(TargetSuffix)</Value>
+		</BuildMacro>
+		<BuildMacro Include="PlatformTarget">
+			<Value>$(PlatformTarget)</Value>
+		</BuildMacro>
+		<BuildMacro Include="PlatformBits">
+			<Value>$(PlatformBits)</Value>
+		</BuildMacro>
+		<BuildMacro Include="ObjDir">
+			<Value>$(ObjDir)</Value>
+		</BuildMacro>
+		<BuildMacro Include="DistDir">
+			<Value>$(DistDir)</Value>
+		</BuildMacro>
+	</ItemGroup>
+</Project>

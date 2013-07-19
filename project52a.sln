@@ -1,0 +1,79 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "project52a", "project52a\project52a.vcxproj", "{E6EB5D6E-C72E-B535-EAEE-5BB1B132D344}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "injector", "injector\injector.vcxproj", "{B90BF0A7-D9B9-876C-9574-13E9C01D3864}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared", "Shared", "{73E543B4-92A1-4DE7-BE34-D963BCB52F0A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Source Files", "Source Files", "{CC02C01B-53E4-4C87-AE18-8C5CA71EC336}"
+	ProjectSection(SolutionItems) = preProject
+		common\src\precompiled.c = common\src\precompiled.c
+		common\src\precompiled.h = common\src\precompiled.h
+		common\src\project52a.h = common\src\project52a.h
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Property Sheets", "Property Sheets", "{4F065679-EC4C-4E27-8391-728A17DF564A}"
+	ProjectSection(SolutionItems) = preProject
+		common\props\build.props = common\props\build.props
+		common\props\setup.props = common\props\setup.props
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "project52a", "project52a", "{55A74C2E-2641-4D2E-900A-D60E45C68F8F}"
+	ProjectSection(SolutionItems) = preProject
+		common\src\project52a\version.h = common\src\project52a\version.h
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "macros", "macros", "{8E6D22A6-58B7-464D-8185-C5E2AF77DCD7}"
+	ProjectSection(SolutionItems) = preProject
+		common\src\project52a\macros\preconfig.h = common\src\project52a\macros\preconfig.h
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{7FD5B57C-B0DC-48D0-A66E-BBA570D38E43}"
+	ProjectSection(SolutionItems) = preProject
+		common\src\project52a\build\common.h = common\src\project52a\build\common.h
+		common\src\project52a\build\msvc.h = common\src\project52a\build\msvc.h
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Documentation", "Documentation", "{FDCE0379-EFFF-4FB1-9C1E-FEC710578F79}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Debug|x64 = Debug|x64
+		Release|Win32 = Release|Win32
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{E6EB5D6E-C72E-B535-EAEE-5BB1B132D344}.Debug|Win32.ActiveCfg = Debug|Win32
+		{E6EB5D6E-C72E-B535-EAEE-5BB1B132D344}.Debug|Win32.Build.0 = Debug|Win32
+		{E6EB5D6E-C72E-B535-EAEE-5BB1B132D344}.Debug|x64.ActiveCfg = Debug|x64
+		{E6EB5D6E-C72E-B535-EAEE-5BB1B132D344}.Debug|x64.Build.0 = Debug|x64
+		{E6EB5D6E-C72E-B535-EAEE-5BB1B132D344}.Release|Win32.ActiveCfg = Release|Win32
+		{E6EB5D6E-C72E-B535-EAEE-5BB1B132D344}.Release|Win32.Build.0 = Release|Win32
+		{E6EB5D6E-C72E-B535-EAEE-5BB1B132D344}.Release|x64.ActiveCfg = Release|x64
+		{E6EB5D6E-C72E-B535-EAEE-5BB1B132D344}.Release|x64.Build.0 = Release|x64
+		{B90BF0A7-D9B9-876C-9574-13E9C01D3864}.Debug|Win32.ActiveCfg = Debug|Win32
+		{B90BF0A7-D9B9-876C-9574-13E9C01D3864}.Debug|Win32.Build.0 = Debug|Win32
+		{B90BF0A7-D9B9-876C-9574-13E9C01D3864}.Debug|x64.ActiveCfg = Debug|x64
+		{B90BF0A7-D9B9-876C-9574-13E9C01D3864}.Debug|x64.Build.0 = Debug|x64
+		{B90BF0A7-D9B9-876C-9574-13E9C01D3864}.Release|Win32.ActiveCfg = Release|Win32
+		{B90BF0A7-D9B9-876C-9574-13E9C01D3864}.Release|Win32.Build.0 = Release|Win32
+		{B90BF0A7-D9B9-876C-9574-13E9C01D3864}.Release|x64.ActiveCfg = Release|x64
+		{B90BF0A7-D9B9-876C-9574-13E9C01D3864}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{CC02C01B-53E4-4C87-AE18-8C5CA71EC336} = {73E543B4-92A1-4DE7-BE34-D963BCB52F0A}
+		{4F065679-EC4C-4E27-8391-728A17DF564A} = {73E543B4-92A1-4DE7-BE34-D963BCB52F0A}
+		{55A74C2E-2641-4D2E-900A-D60E45C68F8F} = {CC02C01B-53E4-4C87-AE18-8C5CA71EC336}
+		{8E6D22A6-58B7-464D-8185-C5E2AF77DCD7} = {55A74C2E-2641-4D2E-900A-D60E45C68F8F}
+		{7FD5B57C-B0DC-48D0-A66E-BBA570D38E43} = {55A74C2E-2641-4D2E-900A-D60E45C68F8F}
+	EndGlobalSection
+EndGlobal
