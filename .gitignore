@@ -3,7 +3,9 @@
 /obj
 *.aps
 *.sdf
+*.opensdf
 /util
 *.suo
 /ref
 /asm
+/thirdparty
