@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
     </Filter>
+    <Filter Include="Assembly Files">
+      <UniqueIdentifier>{6d429712-5a96-4da3-bf51-cd54efef9154}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\injector.c">
@@ -30,7 +33,10 @@
     <ClCompile Include="src\injdll32.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\injdll32_32.c">
+    <ClCompile Include="src\injdll32_64.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\injdll64.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -76,11 +82,14 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="src\injdll32_64.c">
+    <None Include="src\injdll32_32.c">
       <Filter>Source Files</Filter>
     </None>
-    <None Include="src\injdll64.c">
-      <Filter>Source Files</Filter>
+    <None Include="asm\x86.final.asm">
+      <Filter>Assembly Files</Filter>
+    </None>
+    <None Include="asm\x64.current.asm">
+      <Filter>Assembly Files</Filter>
     </None>
   </ItemGroup>
 </Project>

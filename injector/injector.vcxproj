@@ -94,6 +94,10 @@
   <ItemGroup>
     <ResourceCompile Include="res\injector.rc" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="asm\x64.current.asm" />
+    <None Include="asm\x86.final.asm" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

@@ -16,7 +16,7 @@ int inject(LPPROCESS_INFORMATION ppi, wchar_t* sProcName, BOOL* gui)
 	size_t szPath;
 	int iProcArch;
 
-	xdebug(L"%s (%lu)", program_info.name, ppi->dwProcessId );
+	xdebug(L"%s (%lu)", sProcName, ppi->dwProcessId );
 	iProcArch = process_type(ppi, gui);
 
 	if (iProcArch == 0) {

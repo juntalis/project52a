@@ -48,7 +48,7 @@ void error_message(DWORD dw, wchar_t* message, ...)
 		va_start(args, message);
 
 		// Check the resulting size of the buffer.
-		szDisplayBuf = (size_t)_vscwprintf((const wchar_t*)lpMsgBuf, args) + 1;
+		szDisplayBuf = (size_t)_vscwprintf((const wchar_t*)message, args) + 1;
 
 		// Allocate our buffer.
 		lpDisplayBuf = (void*)LocalAlloc(LPTR, WSIZE(szDisplayBuf));
@@ -59,7 +59,7 @@ void error_message(DWORD dw, wchar_t* message, ...)
 	}
 	
 	XLOGW(LEVEL_ERROR, (const wchar_t*)lpDisplayBuf);
-	LocalFree(lpMsgBuf);
+	if(lpMsgBuf) LocalFree(lpMsgBuf);
 	LocalFree(lpDisplayBuf);
 }
 

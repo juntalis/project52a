@@ -15,11 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="project52a.def">
-      <Filter>Source Files</Filter>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="src\project52a.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -36,5 +31,8 @@
     <ResourceCompile Include="res\project52a.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="project52a.def" />
   </ItemGroup>
 </Project>
