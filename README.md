@@ -12,6 +12,7 @@ I'll tell you when I figure it out. When I originally created this repository, I
 #### To-Do
 
 * Find a purpose for this project. (Or don't)
+* Implement memory cleanup for the injected code. Either pass the memory address to the Init function or set up some IPC mechanism to allow the DLL to signal our injector that cleanup can be done.
 * Rewrite the x64 assembly to call `Dll.Init` following the `LoadLibraryW` call.
 * [x86->x64 injection](http://code.google.com/p/rewolf-wow64ext) maybe?
 * Clean up the code and use a single naming style for functions, variables, types, etc.

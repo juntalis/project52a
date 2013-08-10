@@ -18,13 +18,14 @@ static log_level_prefix_t log_level_prefixes[] = {
 
 void error_message(DWORD dw, wchar_t* message, ...)
 {
-	void *lpDisplayBuf = NULL, *lpMsgBuf = NULL;
+	void *lpDisplayBuf = NULL;
 
 	if(dw == 0) {
 		// If no return code was specified, we assume that the message
 		// contains a function name that failed. In that case, we retrieve
 		// the system error message for the last-error code
 		size_t szDisplayLen;
+		void *lpMsgBuf = NULL;
 		dw = GetLastError();
 
 		FormatMessageW(
@@ -39,6 +40,7 @@ void error_message(DWORD dw, wchar_t* message, ...)
 		_snwprintf((wchar_t*)lpDisplayBuf, szDisplayLen,
 			L"%s failed with error 0x%08X: %s", message, dw, lpMsgBuf
 		);
+		LocalFree(lpMsgBuf);
 	} else {
 		// Otherwise, we assume that the error message is a format string.
 		size_t szDisplayBuf;
@@ -59,7 +61,6 @@ void error_message(DWORD dw, wchar_t* message, ...)
 	}
 	
 	XLOGW(LEVEL_ERROR, (const wchar_t*)lpDisplayBuf);
-	if(lpMsgBuf) LocalFree(lpMsgBuf);
 	LocalFree(lpDisplayBuf);
 }
 

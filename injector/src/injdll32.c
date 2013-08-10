@@ -58,7 +58,7 @@ void inject_x86(LPPROCESS_INFORMATION ppi, wchar_t* sDllPath, size_t szDllPath)
 	offLoadLibraryW = find_export_x86(L"kernel32.dll", "LoadLibraryW");
 	offInitFunc = find_export_x86(sDllPath, "Init");
 	
-	context.ContextFlags = WOW64_CONTEXT_CONTROL;
+	context.ContextFlags = CONTEXT;
 	GetThreadContext(ppi->hThread, &context);
 	
 	mem = VirtualAllocEx( ppi->hProcess, NULL, dwCodeSize, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
