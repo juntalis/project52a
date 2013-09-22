@@ -20,6 +20,13 @@ main:
 	add eax, wsDllPath - $			; EAX =   L"project-52a-32.dll\0"
 	push dword eax					; Stack = L"project52a-32.dll\0", original context
 
+; The following few lines are based on shellcode found at:
+;    https://code.google.com/p/w32-bind-ngs-shellcode/source/browse/trunk/w32-bind-ngs-shellcode.asm
+;
+; It's been modified a bit since I originally started playing with it,
+; but the underlying mechanics and comments remain the same, so I've
+; added the appropriate COPYRIGHT.txt file to this directory.
+
 ; Find base address of kernel32.dll. This code should work on Windows 5.0-7.0
 	xor ecx, ecx					; ECX = 0
 	mov esi, [ fs:ecx + 0x30 ]		; ESI = &(PEB) ([FS:0x30])
