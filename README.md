@@ -16,7 +16,7 @@ I'll tell you when I figure it out. When I originally created this repository, I
 * Rewrite the x64 assembly to call `Dll.Init` following the `LoadLibraryW` call.
 * [x86->x64 injection](http://code.google.com/p/rewolf-wow64ext) maybe?
 * Clean up the code and use a single naming style for functions, variables, types, etc.
-* Figure out how to comfortably use Visual Studio as the project's IDE without relying upon MsBuild for the building. (which has been problematic up until now)
+* Figure out how to comfortably use Visual Studio as the project's IDE without relying on MsBuild for the building. (which has been problematic up until now)
 
 #### Credits
 
